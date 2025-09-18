@@ -1,28 +1,43 @@
-name: Run Tests and Upload Artifacts
+name: CI - Tests + Artifacts
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # allows manual runs from the Actions UI
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Check out code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # install your test deps; adjust requirements file or packages as needed
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest
 
-    - name: Run tests
-      run: python -m unittest discover > test-output.txt
+      - name: Run tests (capture stdout/stderr to file)
+        id: run_tests
+        # We run pytest and capture both stdout and stderr to test-output.txt.
+        # Also produce a JUnit XML (optional) for CI tools.
+        run: |
+          mkdir -p test_reports
+          # Run pytest with verbose output and capture all output to a file.
+          # Exit code is preserved (so job status reflects test result).
+          pytest -v --maxfail=1 --junitxml=test_reports/junit.xml 2>&1 | tee test_reports/test-output.txt
+        continue-on-error: false
 
-    - name: Upload test output
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-output
-        path: test-output.txt
+      - name: Upload test output artifact (always)
+        if: always()                 # ensure upload runs even if tests failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test_reports/
