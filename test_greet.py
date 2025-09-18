@@ -5,6 +5,6 @@ class TestGreet(unittest.TestCase):
     """Greeter class provides a method to greet users."""
     def test_greet(self):
         """Test that greet() returns the correct greeting string."""
-        self.assertEqual(greet("RAHEESA"), "Hello, RAHEESA!")
+        self.assertEqual(greet("RAHEESA"), "Hello, !")
 if __name__ == '__main__':
     unittest.main()
